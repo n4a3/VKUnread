@@ -1,0 +1,22 @@
+.listItem {
+}
+
+.btnWrapper {
+}
+
+.deleteBtn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.deleteBtn:hover,
+.deleteBtn:focus {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.listItem:hover + .btnWrapper > .deleteBtn,
+.listItem:focus + .btnWrapper > .deleteBtn {
+  opacity: 1;
+  transition: opacity 0.2s;
+}
