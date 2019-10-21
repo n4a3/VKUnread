@@ -6,11 +6,14 @@ import {
   ListItem,
   ListItemSecondaryAction,
   ListItemText,
-  TextField
+  TextField,
+  Container,
+  createMuiTheme
 } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import React, { Component, Fragment } from 'react';
 import styles from './App.module.css';
+import { ThemeProvider } from '@material-ui/styles';
 
 enum LS {
   VKU_IS_ENABLED = 'VKUIsEnabled',
@@ -26,13 +29,23 @@ interface IState {
   isEnabled: boolean;
   users: IUser[];
   newId: string;
+  userExistError: boolean;
 }
+
+const theme = createMuiTheme({
+  palette: {
+    secondary: {
+      main: '#4a76a8'
+    }
+  }
+});
 
 class App extends Component<{}, IState> {
   public state: Readonly<IState> = {
     isEnabled: true,
     users: [],
-    newId: ''
+    newId: '',
+    userExistError: false
   };
 
   public componentDidMount() {
@@ -63,17 +76,19 @@ class App extends Component<{}, IState> {
   public render() {
     const { isEnabled, users } = this.state;
     return (
-      <Fragment>
-        <FormControlLabel
-          label="Не читать ВСЕ диалоги"
-          control={
-            <Checkbox
-              checked={this.state.isEnabled}
-              onClick={this.toggleGlobal}
-            />
-          }
-          checked={isEnabled}
-        />
+      <ThemeProvider theme={theme}>
+        <Container>
+          <FormControlLabel
+            label="Включить для всех диалогов"
+            control={
+              <Checkbox
+                checked={this.state.isEnabled}
+                onClick={this.toggleGlobal}
+              />
+            }
+            checked={isEnabled}
+          />
+        </Container>
         <List>
           {users.map((user, index) => {
             const onToggle = () => this.toggleUser(index);
@@ -93,23 +108,28 @@ class App extends Component<{}, IState> {
                     edge="end"
                     onChange={onToggle}
                     checked={user.isEnabled}
+                    indeterminate={isEnabled && !user.isEnabled}
                   />
                 </ListItemSecondaryAction>
               </ListItem>
             );
           })}
         </List>
-        <TextField
-          label="VK ID"
-          placeholder="1234567"
-          margin="normal"
-          type="text"
-          inputProps={{ pattern: '^\\d{1,12}$' }}
-          value={this.state.newId}
-          onChange={this.onNewIdChange}
-          onKeyDown={this.addUser}
-        />
-      </Fragment>
+        <Container>
+          <TextField
+            label={this.state.userExistError ? 'User exist!' : 'VK ID'}
+            placeholder="1234567"
+            margin="normal"
+            type="text"
+            inputProps={{ pattern: '^\\d{1,12}$' }}
+            value={this.state.newId}
+            onChange={this.onNewIdChange}
+            onKeyDown={this.addUser}
+            fullWidth
+            error={this.state.userExistError}
+          />
+        </Container>
+      </ThemeProvider>
     );
   }
 
@@ -148,6 +168,10 @@ class App extends Component<{}, IState> {
     const { users, newId } = this.state;
     if (e.keyCode === 13 && newId) {
       e.preventDefault();
+      if (users.findIndex(user => user.id === +newId) !== -1) {
+        this.setState({ userExistError: true });
+        return;
+      }
       const newUser = {
         id: +newId,
         isEnabled: true
@@ -163,7 +187,8 @@ class App extends Component<{}, IState> {
   private onNewIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.currentTarget.validity.valid) {
       this.setState({
-        newId: e.currentTarget.value
+        newId: e.currentTarget.value,
+        userExistError: false
       });
     }
   };

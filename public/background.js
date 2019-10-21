@@ -1,15 +1,28 @@
+// runs on the installation
+chrome.runtime.onInstalled.addListener(details => {
+  if (details.reason === 'install') {
+    chrome.storage.sync.set({
+      VKUIsEnabled: true
+    });
+
+    chrome.storage.sync.set({
+      users: []
+    });
+  }
+});
+
 let isEnabledForAll;
 let users;
 
 function setVars() {
-  chrome.storage.sync.get(['VKUIsEnabled'], res => {
-    const data = res['VKUIsEnabled'];
+  chrome.storage.sync.get('VKUIsEnabled', res => {
+    const data = res.VKUIsEnabled;
     if (data === false || data === true) {
       isEnabledForAll = data;
     }
   });
-  chrome.storage.sync.get(['users'], res => {
-    const data = res['users'];
+  chrome.storage.sync.get('users', res => {
+    const data = res.users;
     if (Array.isArray(data)) {
       users = data;
     }
@@ -19,7 +32,16 @@ function setVars() {
 function cancelCheck(string) {
   if (isEnabledForAll) {
     if (string.includes('a_mark_read')) {
-      return true;
+      let doUnread = true;
+      while (doUnread) {
+        users.forEach(user => {
+          if (string.includes(`peer=${user.id}`) && !user.isEnabled) {
+            doUnread = false;
+          }
+        });
+        break;
+      }
+      return doUnread;
     }
   } else {
     let doUnread = false;
@@ -39,7 +61,7 @@ function cancelCheck(string) {
   }
 }
 
-const callback = details => {
+function callback(details) {
   let bytes = undefined;
   try {
     bytes = details.requestBody.raw[0].bytes;
@@ -54,7 +76,7 @@ const callback = details => {
       };
     }
   }
-};
+}
 
 const urls = { urls: ['*://vk.com/al_im.php'] };
 
