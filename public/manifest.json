@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "short_name": "VKU",
   "name": "VKUnread",
-  "version": "0.1",
+  "version": "0.2",
   "browser_action": {
     "default_popup": "index.html"
   },
@@ -10,8 +10,17 @@
     "scripts": ["background.js"],
     "persistent": true
   },
+  "content_scripts": [
+    {
+      "matches": ["*://vk.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": ["injected.js"],
   "permissions": [
+    "activeTab",
     "storage",
+    "tabs",
     "webRequest",
     "webRequestBlocking",
     "*://vk.com/*"

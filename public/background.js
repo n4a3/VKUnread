@@ -13,8 +13,9 @@ chrome.runtime.onInstalled.addListener(details => {
 
 let isEnabledForAll;
 let users;
+let throttled = false;
 
-function setVars() {
+const setVars = () => {
   chrome.storage.sync.get('VKUIsEnabled', res => {
     const data = res.VKUIsEnabled;
     if (data === false || data === true) {
@@ -27,9 +28,9 @@ function setVars() {
       users = data;
     }
   });
-}
+};
 
-function cancelCheck(string) {
+const cancelCheck = string => {
   if (isEnabledForAll) {
     if (string.includes('a_mark_read')) {
       let doUnread = true;
@@ -59,9 +60,9 @@ function cancelCheck(string) {
     }
     return doUnread;
   }
-}
+};
 
-function callback(details) {
+const callback = details => {
   let bytes = undefined;
   try {
     bytes = details.requestBody.raw[0].bytes;
@@ -71,12 +72,20 @@ function callback(details) {
   if (bytes) {
     const string = String.fromCharCode.apply(null, new Uint8Array(bytes));
     if (cancelCheck(string)) {
+      !throttled &&
+        chrome.tabs.query({ active: true, currentWindow: true }, res => {
+          chrome.tabs.sendMessage(res[0].id, { action: 'VKU_NOTIFICATION' });
+          throttled = true;
+          setTimeout(() => {
+            throttled = false;
+          }, 400);
+        });
       return {
         cancel: true
       };
     }
   }
-}
+};
 
 const urls = { urls: ['*://vk.com/al_im.php'] };
 
